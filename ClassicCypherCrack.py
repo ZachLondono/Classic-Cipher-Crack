@@ -7,6 +7,27 @@ InitLetterFreq = ["T","O","A","W","B","C","D","S","F","M","R","H","I","Y","E","G
 FinalLetterFreq = ["E", "S", "T", "D", "N", "R", "Y", "F", "L", "O", "G", "H", "A", "K", "M", "P", "U", "W"]
 commonWords = ["the", "be", "of", "and", "a", "to", "in", "he", "have", "it", "that", "for", "they", "I", "with", "as", "not", "on", "she", "at", "by", "this", "we", "you", "do", "but", "from", "or", "which", "one", "would", "all", "will", "there", "say", "who", "make", "when", "can", "more", "if", "no", "man", "out", "other", "so", "what", "time", "up", "go", "about", "than", "into", "could", "state", "only", "new", "year", "some", "take", "come", "these", "know", "see", "use", "get", "like", "then", "first", "any", "work", "now", "may", "such", "give", "over", "think", "most", "even", "find", "day", "also", "after", "way", "many", "must", "look", "before", "great", "back", "through", "long", "where", "much", "should", "well", "people", "down", "own", "just", "because", "good", "each", "those", "feel", "seem", "how", "high", "too", "place", "little", "world", "very", "still", "nation", "hand", "old", "life", "tell", "write", "become", "here", "show", "house", "both", "between", "need", "mean", "call", "develop", "under", "last", "right", "move", "thing", "general", "school", "never", "same", "another", "begin", "while", "number", "part", "turn", "real", "leave", "might", "want", "point", "form", "off", "child", "few", "small", "since", "against", "ask", "late", "home", "interest", "large", "person", "end", "open", "public", "follow", "during", "present", "without", "again", "hold", "govern", "around", "possible", "head", "consider", "word", "program", "problem", "however", "lead", "system", "set", "order", "eye", "plan", "run", "keep", "face", "fact", "group", "play", "stand", "increase", "early", "course", "change", "help", "line"]
 
+# Counts instances of an item in an array, returns a unique set of instances ordered from most common to least common
+def sortByOccurrences(array):
+  # Count occurrences in array
+  occurences = {}
+  for instance in array:
+    upCase = instance.upper()
+    if upCase not in occurences: occurences[upCase] = 0
+    occurences[upCase] = occurences[upCase] + 1
+
+  # Sort letters by occurence 
+  return sorted(occurences, key=occurences.get, reverse=True)
+  
+# Takes an orderd array of the most common items in the cypher and the most common in english and matches them up
+def getCandidates(sorted, frequencies):
+  candidates = {}
+  for i in range(len(frequencies)):
+    if i < len(sorted):
+      letter = sorted[i]
+      candidates[frequencies[i]] = letter
+
+  return candidates 
 
 # Splits Cyper text into relevant groups of letters/words
 def splitCypherText(cypher):
@@ -63,31 +84,9 @@ def splitCypherText(cypher):
     initialLetter.append(word[0:1])
     finalLetter.append(word[-1])
 
-  return [allLetters, initialLetter, finalLetter, twoLetters, threeLetters], [allWords, oneLetterWords, twoLetterWords, threeLetterWords, fourLetterWords]
+  return [sortByOccurrences(allLetters), sortByOccurrences(initialLetter), sortByOccurrences(finalLetter), sortByOccurrences(twoLetters), sortByOccurrences(threeLetters)], [sortByOccurrences(allWords), sortByOccurrences(oneLetterWords), sortByOccurrences(twoLetterWords), sortByOccurrences(threeLetterWords), sortByOccurrences(fourLetterWords)]
 
-# Counts instances of an item in an array, returns a unique set of instances ordered from most common to least common
-def sortByOccurrences(array):
-  # Count occurrences in array
-  occurences = {}
-  for instance in array:
-    upCase = instance.upper()
-    if upCase not in occurences: occurences[upCase] = 0
-    occurences[upCase] = occurences[upCase] + 1
-
-  # Sort letters by occurence 
-  return sorted(occurences, key=occurences.get, reverse=True)
-  
-# Takes an orderd array of the most common items in the cypher and the most common in english and matches them up
-def getCandidates(sorted, frequencies):
-  candidates = {}
-  for i in range(len(frequencies)):
-    if i < len(sorted):
-      letter = sorted[i]
-      candidates[frequencies[i]] = letter
-
-  return candidates 
-
-def twoLetterGuess(guesses):
+def twoLetterGuess(guesses, twoLetterWords):
   for word in twoLetterWords:
     if 'O' in guesses and word[0] == guesses['O']:
       #O*  
@@ -125,7 +124,7 @@ def twoLetterGuess(guesses):
   return guesses
 
 
-def threeLetterGuess(guesses):
+def threeLetterGuess(guesses, oneLetterWords, threeLetterWords):
   for word in threeLetterWords:
 
     # Check if the first letter of the word is also a single letter word itself
@@ -143,7 +142,7 @@ def threeLetterGuess(guesses):
         guesses['I'] = wordB
 
     # Candidate is probably a T 
-    if ('T' not in guesses or ('T' in guesses and word[0] == guesses['T'])) and word[-1] == singleLetterCandidates['E']:
+    if ('T' not in guesses or ('T' in guesses and word[0] == guesses['T'])) and word[-1] == guesses['E']:
       guesses['T'] = word[0]
       guesses['H'] = word[1:2]
       guesses['E'] = word[-1]
@@ -161,7 +160,7 @@ def threeLetterGuess(guesses):
 
   return guesses    
 
-def fourLetterGuess(guesses):
+def fourLetterGuess(guesses, fourLetterWords):
   for word in fourLetterWords:
     if 'T' in guesses and word[0] == guesses['T']:
       # Word starts with T
@@ -213,6 +212,20 @@ def fourLetterGuess(guesses):
   return guesses
 
 
+# Use previously made guesses to make further guesses of words
+def makeGuess(guesses, wordsSplit):
+  guesses = threeLetterGuess(guesses, wordsSplit[1], wordsSplit[3])  
+  guesses = fourLetterGuess(guesses, wordsSplit[4])
+  guesses = twoLetterGuess(guesses, wordsSplit[2])
+  for word in wordsSplit[1]:
+    if 'A' in guesses and word != guesses['A']:
+      guesses['I'] = word
+    if 'I' in guesses and word != guesses['I']:
+      guesses['A'] = word
+
+  return guesses
+
+
 def get_key(dictionary, val):
     for key, value in dictionary.items():
         if val == value:
@@ -244,7 +257,7 @@ def compareWords(cypherWord, commonWord, guesses, missing):
       if temp not in missing: missing[temp] = []
       missing[temp] += tempMissing[temp]
 
-def compareCommonWords(guesses):
+def compareCommonWords(guesses, allWordsSorted):
   missing = {}
   for word in allWordsSorted:
     # Compare words in the cyper to common words
@@ -278,19 +291,25 @@ def test(guesses, missing, accuraccy):
       if mostFrequent != '' and mostFrequent not in guesses:
         guesses[mostFrequent] = match
 
-# Use previously made guesses to make further guesses of words
-def makeGuess(guesses):
-  guesses = threeLetterGuess(guesses)  
-  guesses = fourLetterGuess(guesses)
-  guesses = twoLetterGuess(guesses)
-  for word in oneLetterWords:
-    if 'A' in guesses and word != guesses['A']:
-      guesses['I'] = word
-    if 'I' in guesses and word != guesses['I']:
-      guesses['A'] = word
+def decodeKey(cypher):
+  lettersSplit, wordsSplit = splitCypherText(cypher)
 
-  return guesses
+  singleLetterCandidates = getCandidates(lettersSplit[0], SingleLetterFreq)
 
+  guesses = {}
+  guesses['E'] = singleLetterCandidates['E']
+  guesses = makeGuess(guesses, wordsSplit)
+
+  accuraccy = 1.00
+  while accuraccy > 0:
+    initLen = len(guesses)
+    missing = compareCommonWords(guesses, wordsSplit[0])
+    test(guesses, missing, accuraccy)
+    if len(guesses) - initLen == 0:
+      accuraccy -= .05
+
+  print(guesses)
+  print(len(guesses))
 
 
 if __name__ == '__main__':
@@ -305,34 +324,6 @@ if __name__ == '__main__':
         i = -1
       cypher += alpha[i + 1]
 
+  decodeKey(cypher)
 
-  lettersSplit, wordsSplit = splitCypherText(plaintext)
-  singleLettersSorted = sortByOccurrences(lettersSplit[0])
-  initialLettersSorted = sortByOccurrences(lettersSplit[1])
-  finalLettersSorted = sortByOccurrences(lettersSplit[2])
-  twoLettersSorted = sortByOccurrences(lettersSplit[3])
-  threeLettersSorted = sortByOccurrences(lettersSplit[4])
 
-  allWordsSorted = sortByOccurrences(wordsSplit[0])
-  oneLetterWords = sortByOccurrences(wordsSplit[1])
-  twoLetterWords = sortByOccurrences(wordsSplit[2])
-  threeLetterWords = sortByOccurrences(wordsSplit[3])
-  fourLetterWords = sortByOccurrences(wordsSplit[4])
-
-  singleLetterCandidates = getCandidates(singleLettersSorted, SingleLetterFreq)
-
-  guesses = makeGuess({})
-  guesses = makeGuess(guesses)
-  print(len(guesses))
-  print(guesses)
-
-  accuraccy = 1.00
-  while accuraccy > 0:
-    initLen = len(guesses)
-    missing = compareCommonWords(guesses)
-    test(guesses, missing, accuraccy)
-    if len(guesses) - initLen == 0:
-      accuraccy -= .05
-
-  print(guesses)
-  print(len(guesses))

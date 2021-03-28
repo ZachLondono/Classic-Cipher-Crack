@@ -1,4 +1,5 @@
 import sys
+import ClassicCypherCrack as crack
 
 if __name__ == '__main__':
 	if len(sys.argv) != 2:
@@ -21,13 +22,16 @@ if __name__ == '__main__':
 		exit()
 
 	# Find key from data
-	# print(encryptedText)
+	key = crack.decodeKey(encryptedText)
 
-	key = "ABCDE"
+	if not key:
+		print("Failed to find valid key")
+		exit()
+
 	# Write key to file
 	try:
 		keyFile = open("key.txt", 'w')
-		keyFile.write(key)
+		keyFile.write(str(key))
 	except Exception as e:
 		print("Failed to write key to file")
 		exit()	

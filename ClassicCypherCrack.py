@@ -213,7 +213,7 @@ def fourLetterGuess(guesses, fourLetterWords):
 
 
 # Use previously made guesses to make further guesses of words
-def makeGuess(guesses, wordsSplit):
+def guessCommonWords(guesses, wordsSplit):
   guesses = threeLetterGuess(guesses, wordsSplit[1], wordsSplit[3])  
   guesses = fourLetterGuess(guesses, wordsSplit[4])
   guesses = twoLetterGuess(guesses, wordsSplit[2])
@@ -238,6 +238,7 @@ def compareWords(cypherWord, commonWord, guesses, missing):
 
   matches = 0 # number of letters decoded with guesses that match the common word
   for cypherLetter, commonLetter in zip(cypherWord, commonWord):
+
     decryptLetter = get_key(guesses, cypherLetter)
     if not not decryptLetter: #key in guesses:
       # There exists a guess for this letter
@@ -250,7 +251,6 @@ def compareWords(cypherWord, commonWord, guesses, missing):
       # There does not yet exist a guess for this letter, it might be the letter in the common word
       if cypherLetter not in tempMissing: tempMissing[cypherLetter] = []
       tempMissing[cypherLetter].append(commonLetter)
-
   # Every letter in the cypher word had a letter in the guesses that matched up with a common word
   if len(cypherWord) - matches < len(cypherWord) / 2:
     for temp in tempMissing:
@@ -264,17 +264,18 @@ def compareCommonWords(guesses, allWordsSorted):
     for commonWord in commonWords:
       if len(word) == len(commonWord):
         compareWords(word, commonWord.upper(), guesses, missing)
+
   return missing
 
-def test(guesses, missing, accuraccy):
+def decodeFromWords(guesses, missing, accuraccy):
   for match in missing:
     li = missing[match]
-    if len(li) == 0 or len(li) == 1: 
-      continue 
-    
+    if len(li) == 0:
+      continue
+
     # Find the most common matches for the letter
     mostFrequent = ""
-    count = 1
+    count = 0
     for i in range(len(li)):
       currCount = 1
       for j in range(len(li)):
@@ -291,25 +292,84 @@ def test(guesses, missing, accuraccy):
       if mostFrequent != '' and mostFrequent not in guesses:
         guesses[mostFrequent] = match
 
+def guessRareLetters(guesses, allWords):
+  # Find possible Qs
+  potentialQ = []
+  potentialJ = []
+  potentialZ = []
+
+  for word in allWords:
+    if 'U' in guesses:
+      for i in range(len(word) - 1):
+        letterA = word[i].upper()
+        letterB = word[i + 1].upper()
+        if letterB == guesses['U']:
+          potentialQ.append(letterA)
+
+    if 'I' in guesses and 'E' in guesses:
+      for i in range(len(word) - 2):
+        if word[i] == guesses['I'] and word[i + 2] == guesses['E']:
+          potentialZ.append(word[i + 1])
+
+    if 'U' in guesses and 'S' in guesses and 'T' in guesses:
+      for i in range(len(word) - 3):
+        if word[i + 1] == guesses['U'] and word[i + 2] == guesses['S'] and word[i + 3] == guesses['T']:
+          potentialJ.append(word[i])
+
+  def removeDup(potentials):
+    temp = []
+    for candidate in potentials:
+      if not get_key(guesses, candidate):
+        temp.append(candidate)
+    return sortByOccurrences(temp)
+
+
+  potentialQ = removeDup(potentialQ)
+  potentialJ = removeDup(potentialJ)
+  potentialZ = removeDup(potentialZ)
+
+  potentialQ = [x for x in potentialQ if x not in potentialJ and x not in potentialZ]
+  potentialJ = [x for x in potentialJ if x not in potentialQ and x not in potentialZ]
+  potentialZ = [x for x in potentialZ if x not in potentialQ and x not in potentialJ]
+
+  if len(potentialQ) != 0: guesses['Q'] = potentialQ[0]
+  if len(potentialJ) != 0: guesses['J'] = potentialJ[0]
+  if len(potentialZ) != 0: guesses['Z'] = potentialZ[0]
+
 def decodeKey(cypher):
   lettersSplit, wordsSplit = splitCypherText(cypher)
 
   singleLetterCandidates = getCandidates(lettersSplit[0], SingleLetterFreq)
+  initalLetterCandidates = getCandidates(lettersSplit[1], InitLetterFreq)
+  finalLetterCandidates = getCandidates(lettersSplit[2], FinalLetterFreq)
 
-  guesses = {}
-  guesses['E'] = singleLetterCandidates['E']
-  guesses = makeGuess(guesses, wordsSplit)
+  # Try to find words in the encrypted text assuming the most common letter is E
+  commonWordGuesses = guessCommonWords({'E':singleLetterCandidates['E']}, wordsSplit)
 
+  guesses = commonWordGuesses
+
+  # Using those guesses, try to guess more letters using more common words
   accuraccy = 1.00
   while accuraccy > 0:
     initLen = len(guesses)
     missing = compareCommonWords(guesses, wordsSplit[0])
-    test(guesses, missing, accuraccy)
+    decodeFromWords(guesses, missing, accuraccy)
     if len(guesses) - initLen == 0:
       accuraccy -= .05
 
-  print(guesses)
-  print(len(guesses))
+  guessRareLetters(guesses, wordsSplit[0])
+
+  for letter in alpha:
+    if letter not in guesses:
+      for letterB in alpha:
+        if not get_key(guesses,letterB):
+          guesses[letter] = letterB
+
+  key = ""
+  for letter in alpha:
+    key += guesses[letter]
+
+  return key
 
 
 if __name__ == '__main__':
@@ -324,6 +384,7 @@ if __name__ == '__main__':
         i = -1
       cypher += alpha[i + 1]
 
-  decodeKey(cypher)
+  key = decodeKey(cypher)
+  print(key)
 
 

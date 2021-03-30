@@ -3,7 +3,7 @@ import ClassicCypherCrack as crack
 
 if __name__ == '__main__':
 	if len(sys.argv) != 2:
-		print(f"Invlid arguments\n Usage: {sys.argv[0]} [filepath]")
+		print(f"Invlid arguments\npython3 Usage: {sys.argv[0]} [filepath]")
 		exit()
 
 	# Open file which contains encrypted data
@@ -34,4 +34,11 @@ if __name__ == '__main__':
 		keyFile.write(str(key))
 	except Exception as e:
 		print("Failed to write key to file")
-		exit()	
+		exit()
+
+	count = 0
+	for i in range(len(crack.alpha)):
+		if crack.alpha[i] != key[i]:
+			print(f"Wrong: {crack.alpha[i]}, {key[i]}")
+			count += 1
+	print(f"Acc: {(1 - count / 26) * 100}%")

@@ -5,7 +5,6 @@ SingleLetterFreq = ['E','T','A','O','I','N','S','H','R','D','L','U']
 DoubleFreq = ["ss", "ee", "tt", "ff", "ll", "mm", "oo"]
 InitLetterFreq = ["T","O","A","W","B","C","D","S","F","M","R","H","I","Y","E","G","L","N","P","U","J","K"]
 FinalLetterFreq = ["E", "S", "T", "D", "N", "R", "Y", "F", "L", "O", "G", "H", "A", "K", "M", "P", "U", "W"]
-commonWords = ["the", "be", "of", "and", "a", "to", "in", "he", "have", "it", "that", "for", "they", "I", "with", "as", "not", "on", "she", "at", "by", "this", "we", "you", "do", "but", "from", "or", "which", "one", "would", "all", "will", "there", "say", "who", "make", "when", "can", "more", "if", "no", "man", "out", "other", "so", "what", "time", "up", "go", "about", "than", "into", "could", "state", "only", "new", "year", "some", "take", "come", "these", "know", "see", "use", "get", "like", "then", "first", "any", "work", "now", "may", "such", "give", "over", "think", "most", "even", "find", "day", "also", "after", "way", "many", "must", "look", "before", "great", "back", "through", "long", "where", "much", "should", "well", "people", "down", "own", "just", "because", "good", "each", "those", "feel", "seem", "how", "high", "too", "place", "little", "world", "very", "still", "nation", "hand", "old", "life", "tell", "write", "become", "here", "show", "house", "both", "between", "need", "mean", "call", "develop", "under", "last", "right", "move", "thing", "general", "school", "never", "same", "another", "begin", "while", "number", "part", "turn", "real", "leave", "might", "want", "point", "form", "off", "child", "few", "small", "since", "against", "ask", "late", "home", "interest", "large", "person", "end", "open", "public", "follow", "during", "present", "without", "again", "hold", "govern", "around", "possible", "head", "consider", "word", "program", "problem", "however", "lead", "system", "set", "order", "eye", "plan", "run", "keep", "face", "fact", "group", "play", "stand", "increase", "early", "course", "change", "help", "line"]
 
 # Counts instances of an item in an array, returns a unique set of instances ordered from most common to least common
 def sortByOccurrences(array):
@@ -94,7 +93,7 @@ def twoLetterGuess(guesses, twoLetterWords):
         # not ON, OR, probably OF
         guesses['F'] = word[1]
     elif 'T' in guesses:
-      if word[0] == guesses['T']:
+      if word[0] == guesses['T'] and 'V' in guesses and word[1] != guesses['V']:
         guesses['O'] = word[1]
       elif word[1] == guesses['T']:
         # *T, IT or AT
@@ -103,7 +102,7 @@ def twoLetterGuess(guesses, twoLetterWords):
         elif 'A' in guesses and word[0] != guesses['A']:
           guesses['I'] = word[0]
     elif 'I' in guesses and word[0] == guesses['I']:
-      # I'M may be mistaken as IS, IN, IT if there is no '  
+      # I'M or I'D may be mistaken as IS, IN, IT if there is no '
       # I*
       if 'S' in guesses and word[1] != guesses['S'] and 'N' in guesses and word[1] != guesses['N']:
         guesses['T'] = word[1]
@@ -131,11 +130,12 @@ def threeLetterGuess(guesses, oneLetterWords, threeLetterWords):
     for wordB in oneLetterWords:
       if word[0] == wordB:
         # If the first letter of a word is also a single letter word, it's probably an A
-        guesses['A'] = word[0]
+        if 'I' in guesses and guesses['I'] != word[0]:
+          guesses['A'] = word[0]
         
-        # If first letter is probably A and is followed by two of the same letters they are probably L
-        if word[1:2] == word[2:3]:
-          guesses['L'] = word[-1]
+        # If first letter is probably A and is followed by two of the same letters they are probably L, or P
+        # if word[1:2] == word[2:3]:
+        #   guesses['L'] = word[-1]
 
       elif 'A' in guesses and guesses['A'] != wordB:
         # If the first letter of a word is also a single letter word, but it's not also A, it's probably I
@@ -151,11 +151,18 @@ def threeLetterGuess(guesses, oneLetterWords, threeLetterWords):
 
     if 'H' in guesses and word[0] == guesses['H']:
       if 'E' in guesses  and word[1] == guesses['E']:
-        guesses['Y'] = word[-1]
+        if 'R' in guesses and word[-1] != guesses['R']:
+          guesses['Y'] = word[-1]
+        if 'Y' in guesses and word[-1] != guesses['Y']:
+          guesses['R'] = word[-1]
       elif 'O' in guesses  and word[1] == guesses['O']:
         guesses['W'] = word[-1]
       elif 'A' in guesses  and word[1] == guesses['A']:
-        guesses['S'] = word[-1]
+        if 'S' in guesses and word[-1] != guesses['S']:
+          guesses['D'] = word[-1]
+        elif 'D' in guesses and word[-1] != guesses['D']:
+          guesses['S'] = word[-1]
+
       
 
   return guesses    
@@ -191,9 +198,7 @@ def fourLetterGuess(guesses, fourLetterWords):
       # Word starts with H
       if 'E' in guesses and word[1] == guesses['E']:
         # HE**
-        if word[-1] != guesses['E']: 
-          guesses['Y'] = word[-1]
-        else: 
+        if word[-1] == guesses['E']:
           # HE*E
           guesses['R'] = word[2]
       elif 'E' in guesses and word[-1] == guesses['E']:
@@ -214,9 +219,10 @@ def fourLetterGuess(guesses, fourLetterWords):
 
 # Use previously made guesses to make further guesses of words
 def guessCommonWords(guesses, wordsSplit):
-  guesses = threeLetterGuess(guesses, wordsSplit[1], wordsSplit[3])  
+  guesses = threeLetterGuess(guesses, wordsSplit[1], wordsSplit[3])
   guesses = fourLetterGuess(guesses, wordsSplit[4])
   guesses = twoLetterGuess(guesses, wordsSplit[2])
+
   for word in wordsSplit[1]:
     if 'A' in guesses and word != guesses['A']:
       guesses['I'] = word
@@ -257,7 +263,7 @@ def compareWords(cypherWord, commonWord, guesses, missing):
       if temp not in missing: missing[temp] = []
       missing[temp] += tempMissing[temp]
 
-def compareCommonWords(guesses, allWordsSorted):
+def compareCommonWords(guesses, allWordsSorted, commonWords):
   missing = {}
   for word in allWordsSorted:
     # Compare words in the cyper to common words
@@ -297,24 +303,59 @@ def guessRareLetters(guesses, allWords):
   potentialQ = []
   potentialJ = []
   potentialZ = []
+  potentialX = []
 
   for word in allWords:
-    if 'U' in guesses:
+    word = word.upper()
+
+    if 'U' in guesses and 'Q' not in guesses:
       for i in range(len(word) - 1):
         letterA = word[i].upper()
         letterB = word[i + 1].upper()
         if letterB == guesses['U']:
           potentialQ.append(letterA)
 
-    if 'I' in guesses and 'E' in guesses:
-      for i in range(len(word) - 2):
-        if word[i] == guesses['I'] and word[i + 2] == guesses['E']:
-          potentialZ.append(word[i + 1])
+    if 'Z' not in guesses:
+      if 'I' in guesses:
+        for i in range(len(word) - 2):
+            if 'E' in guesses:
+              if word[i] == guesses['I'] and word[i + 2] == guesses['E']:
+                potentialZ.append(word[i + 1])
+            if 'G' in guesses:
+              if word[i + 1] == guesses['I'] and word[i + 2] == guesses['G']:
+                potentialZ.append(word[i])
 
-    if 'U' in guesses and 'S' in guesses and 'T' in guesses:
+        for i in range(len(word) - 3):
+          if 'B' in guesses and 'U' in guesses:
+            if word[i] == guesses['B'] and word[i + 1] == guesses['U'] and word[i + 2] == word[i + 3]:
+              potentialZ.append(word[i+2])
+
+      if 'C' in guesses and 'R' in guesses and 'A' in guesses:
+        for i in range(len(word) - 4):
+          if word[i] == guesses['C'] and word[i + 1] == guesses['R'] and word[i + 2] == guesses['A']:
+            if 'E' in guesses and word[i + 4] == guesses['E'] or 'Y' in guesses and word[i + 4] == guesses['Y']:
+              potentialZ.append(word[i + 3])
+
+    if 'U' in guesses and 'S' in guesses and 'T' in guesses and 'J' not in guesses:
       for i in range(len(word) - 3):
         if word[i + 1] == guesses['U'] and word[i + 2] == guesses['S'] and word[i + 3] == guesses['T']:
           potentialJ.append(word[i])
+
+    if 'X' not in guesses:
+      for i in range(len(word) - 2):
+        if 'T' in guesses and 'A' in guesses:
+          if word[i] == guesses['T'] and word[i + 1] == guesses['A']:
+            potentialX.append(word[i + 2])
+        if 'M' in guesses and 'A' in guesses:
+          if word[i] == guesses['M'] and word[i + 1] == guesses['A']:
+            potentialX.append(word[i + 2])
+        if 'B' in guesses and 'O' in guesses:
+            if word[i] == guesses['B'] and word[i + 1] == 'O':
+              potentialX.append(word[i + 2])
+      for i in range(len(word) - 3):
+        if 'T' in guesses and 'E' in guesses:
+          if word[i] == guesses['T'] and word[i + 1] == guesses['E'] and word[-1] == guesses['T']:
+            potentialX.append(word[i + 2])
 
   def removeDup(potentials):
     temp = []
@@ -323,21 +364,47 @@ def guessRareLetters(guesses, allWords):
         temp.append(candidate)
     return sortByOccurrences(temp)
 
-
   potentialQ = removeDup(potentialQ)
   potentialJ = removeDup(potentialJ)
   potentialZ = removeDup(potentialZ)
+  potentialX = removeDup(potentialX)
 
-  potentialQ = [x for x in potentialQ if x not in potentialJ and x not in potentialZ]
-  potentialJ = [x for x in potentialJ if x not in potentialQ and x not in potentialZ]
-  potentialZ = [x for x in potentialZ if x not in potentialQ and x not in potentialJ]
+  potentialQ = [x for x in potentialQ if x not in potentialJ and x not in potentialZ and x not in potentialX]
+  potentialJ = [x for x in potentialJ if x not in potentialQ and x not in potentialZ and x not in potentialX]
+  potentialZ = [x for x in potentialZ if x not in potentialQ and x not in potentialJ and x not in potentialX]
+  potentialX = [x for x in potentialX if x not in potentialQ and x not in potentialJ and x not in potentialZ]
 
   if len(potentialQ) != 0: guesses['Q'] = potentialQ[0]
   if len(potentialJ) != 0: guesses['J'] = potentialJ[0]
   if len(potentialZ) != 0: guesses['Z'] = potentialZ[0]
+  if len(potentialX) != 0: guesses['X'] = potentialX[0]
 
 def decodeKey(cypher):
   lettersSplit, wordsSplit = splitCypherText(cypher)
+  dictionary = ""
+  try:
+    dictionary = open("dictionary_medium.txt", 'r')
+    dictionaryWords = dictionary.read()
+    commonWords = dictionaryWords.split('\n')
+  except Exception as e:
+    print("Failed to read dictionary, using smaller word set. Will likely have lower accuracy")
+    commonWords = ["the", "be", "of", "and", "a", "to", "in", "he", "have", "it", "that", "for", "they", "I", "with",
+                   "as", "not", "on", "she", "at", "by", "this", "we", "you", "do", "but", "from", "or", "which", "one",
+                   "would", "all", "will", "there", "say", "who", "make", "when", "can", "more", "if", "no", "man",
+                   "out", "other", "so", "what", "time", "up", "go", "about", "than", "into", "could", "state", "only",
+                   "new", "year", "some", "take", "come", "these", "know", "see", "use", "get", "like", "then", "first",
+                   "any", "work", "now", "may", "such", "give", "over", "think", "most", "even", "find", "day", "also",
+                   "after", "way", "many", "must", "look", "before", "great", "back", "through", "long", "where",
+                   "much", "should", "well", "people", "down", "own", "just", "because", "good", "each", "those",
+                   "feel", "seem", "how", "high", "too", "place", "little", "world", "very", "still", "nation", "hand",
+                   "old", "life", "tell", "write", "become", "here", "show", "house", "both", "between", "need", "mean",
+                   "call", "develop", "under", "last", "right", "move", "thing", "general", "school", "never", "same",
+                   "another", "begin", "while", "number", "part", "turn", "real", "leave", "might", "want", "point",
+                   "form", "off", "child", "few", "small", "since", "against", "ask", "late", "home", "interest",
+                   "large", "person", "end", "open", "public", "follow", "during", "present", "without", "again",
+                   "hold", "govern", "around", "possible", "head", "consider", "word", "program", "problem", "however",
+                   "lead", "system", "set", "order", "eye", "plan", "run", "keep", "face", "fact", "group", "play",
+                   "stand", "increase", "early", "course", "change", "help", "line"]
 
   singleLetterCandidates = getCandidates(lettersSplit[0], SingleLetterFreq)
   initalLetterCandidates = getCandidates(lettersSplit[1], InitLetterFreq)
@@ -352,10 +419,10 @@ def decodeKey(cypher):
   accuraccy = 1.00
   while accuraccy > 0:
     initLen = len(guesses)
-    missing = compareCommonWords(guesses, wordsSplit[0])
+    missing = compareCommonWords(guesses, wordsSplit[0], commonWords)
     decodeFromWords(guesses, missing, accuraccy)
     if len(guesses) - initLen == 0:
-      accuraccy -= .05
+      accuraccy -= .15
 
   guessRareLetters(guesses, wordsSplit[0])
 
@@ -372,19 +439,43 @@ def decodeKey(cypher):
   return key
 
 
-if __name__ == '__main__':
-  plaintext = "The presidency of Donald Trump began at noon EST (17:00 UTC) on January 20, 2017, when Donald Trump was inaugurated as the 45th president of the United States, and ended on January 20, 2021. Trump, a Republican originally from New York City, took office following his surprise Electoral College victory over Democratic nominee Hillary Clinton in the 2016 presidential election, in which he did not win a plurality of the popular vote. Trump made many false or misleading statements during his campaign and presidency. His presidency ended following his defeat in the 2020 presidential election by Democrat Joe Biden.  Trump was unsuccessful in his efforts to repeal the Affordable Care Act (ACA), but rescinded the individual mandate and took measures to hinder the ACA’s functioning. Trump sought substantial spending cuts to major welfare programs, including Medicare and Medicaid. He signed the Great American Outdoors Act, pursued energy independence, reversed numerous environmental regulations, and withdrew from the Paris Accord. He signed criminal justice reform through the First Step Act and appointed three Justices to the U.S. Supreme Court. In economic policy, he partially repealed the Dodd–Frank Act and signed the Tax Cuts and Jobs Act of 2017. He enacted tariffs, triggering retaliatory tariffs from China, Canada, Mexico, and the EU. He withdrew from the Trans-Pacific Partnership negotiations and signed the USMCA, a successor agreement to NAFTA. The federal deficit increased under Trump due to spending increases and tax cuts.  He implemented a controversial family separation policy for migrants apprehended at the U.S.–Mexico border. Trump's demand for the federal funding of a border wall resulted in the longest US government shutdown in history. He deployed federal law enforcement forces in response to protests in 2020. Trump faced the COVID-19 pandemic in his final year. He signed the CARES Act and a second stimulus package in response to the economic impact of the pandemic. Trump's \"America First\" foreign policy was characterized by unilateral actions, disregarding traditional allies. The administration implemented a major arms sale to Saudi Arabia, recognized Jerusalem as the capital of Israel, and denied citizens from several Muslim-majority countries entry into the U.S. His administration withdrew U.S. troops from northern Syria, allowing Turkey to occupy the area. Trump met North Korea's leader, Kim Jong-un, three times. Trump withdrew the U.S. from the Iran nuclear agreement, and later escalated tensions in the Persian Gulf by ordering the assassination of General Qasem Soleimani.  Robert Mueller's Special Counsel investigation (2017–2019) concluded that Russia interfered to favor Trump's candidacy, and that while the prevailing evidence \"did not establish that members of the Trump campaign conspired or coordinated with the Russian government\", possible obstructions of justice occurred during the course of that investigation.  Trump attempted to pressure Ukraine to announce investigations into his political rival Joe Biden, triggering his first impeachment by the House of Representatives in December 2019, but he was acquitted by the Senate.  Following his loss in the 2020 presidential election to Biden, Trump refused to concede and initiated an aggressive pursuit to overturn the results, alleging unproven claims of widespread electoral fraud. On January 6, 2021, during a rally at The Ellipse, Trump urged his supporters to \"fight like hell\" and march to the Capitol, where the electoral votes were being counted by Congress in order to formalize Biden's victory. A mob of Trump supporters stormed the Capitol, suspending the count as Vice President Mike Pence and other members of Congress were evacuated. On January 13, the House voted to impeach Trump an unprecedented second time for \"incitement of insurrection\", but he was again acquitted by the Senate."
-  cypher = ""
-  for letter in plaintext:
-    ul = letter.upper()
-    if ul not in alpha: cypher += ul
-    else:
-      i = alpha.index(ul)
-      if i == 25:
-        i = -1
-      cypher += alpha[i + 1]
+import sys
+import ClassicCypherCrack as crack
 
-  key = decodeKey(cypher)
-  print(key)
+if __name__ == '__main__':
+	if len(sys.argv) != 2:
+		print(f"Invlid arguments\npython3 Usage: {sys.argv[0]} [filepath]")
+		exit()
+
+	# Open file which contains encrypted data
+	try:
+		encryptedFile = open(sys.argv[1], 'r')
+	except Exception as e:
+		print("Error: failed to open file")
+		exit()
+
+	# Read encrypted data
+	try:
+		encryptedText = encryptedFile.read()
+		encryptedFile.close()
+	except Exception as e:
+		print("Error: failed to read from file")
+		print(e)
+		exit()
+
+	# Find key from data
+	key = crack.decodeKey(encryptedText)
+
+	if not key:
+		print("Failed to find valid key")
+		exit()
+
+	# Write key to file
+	try:
+		keyFile = open("key.txt", 'w')
+		keyFile.write(str(key))
+	except Exception as e:
+		print("Failed to write key to file")
+		exit()
 
 
